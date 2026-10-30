@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Piloto 126.25 · 📱 Textos del widget -->
+<!-- Piloto 126.25 · 📱 Textos de los widgets (1.3: también la lista grande y el calendario del mes) -->
 <resources>
     <string name="widget_nombre">Querit any · próximos planes</string>
     <string name="widget_descripcion">Tus planes de los próximos días (y los de tus calendarios compartidos), cifrados hasta llegar a tu móvil.</string>
+    <string name="widget_nombre_grande">Querit any · lista grande</string>
+    <string name="widget_descripcion_grande">Hasta 18 planes del próximo mes, los tuyos y los de tus calendarios compartidos.</string>
+    <string name="widget_nombre_mes">Querit any · calendario del mes</string>
+    <string name="widget_descripcion_mes">El mes con puntitos de colores o con los nombres de hasta 2 planes por día (Aa). ◀ ▶ para cambiar de mes.</string>
 </resources>

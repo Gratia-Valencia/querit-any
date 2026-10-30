@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Piloto 126.25 · APK 1.3 · El círculo de «hoy» en el calendario del mes -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+    <solid android:color="#e2622c" />
+</shape>

@@ -130,6 +130,25 @@ final class WidgetDatos {
         }
     }
 
+    /** «aaaa-mm» del mes m (0–11) del año a. */
+    static String clavesMes(int a, int m) {
+        return String.format(java.util.Locale.ROOT, "%04d-%02d", a, m + 1);
+    }
+
+    static int diasDelMes(int a, int m) {
+        int[] d = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+        boolean bis = (a % 4 == 0 && a % 100 != 0) || a % 400 == 0;
+        return m == 1 && bis ? 29 : d[m];
+    }
+
+    /** Pinta todos los widgets de Querit any (los tres tipos). */
+    static void pintarTodos(Context c) {
+        android.appwidget.AppWidgetManager m = android.appwidget.AppWidgetManager.getInstance(c);
+        QueritWidget.pintar(c, m, m.getAppWidgetIds(new android.content.ComponentName(c, QueritWidget.class)), QueritWidget.MAX_FILAS);
+        QueritWidget.pintar(c, m, m.getAppWidgetIds(new android.content.ComponentName(c, QueritWidgetGrande.class)), QueritWidgetGrande.MAX_FILAS);
+        QueritWidgetMes.pintar(c, m, m.getAppWidgetIds(new android.content.ComponentName(c, QueritWidgetMes.class)));
+    }
+
     static String colorDe(String id) {
         switch (id) {
             case "lavanda": return "#8f7ad6";
@@ -209,9 +228,10 @@ final class WidgetDatos {
 
             String hoy = r.optString("hoy", "");
             if (hoy.length() != 10) hoy = hoyAqui();
+            // (1.3: para la lista grande, hasta 40 planes del próximo mes; la pequeña enseña los primeros)
             JSONArray dias = new JSONArray();
             int total = 0;
-            for (int i = 0; i < 14 && total < 8; i++) {
+            for (int i = 0; i < 31 && total < 40; i++) {
                 final String dia = deDia(diaN(hoy) + i);
                 List<JSONObject> deHoy = new ArrayList<>();
                 for (JSONObject e : eventos) if (tocaEl(e, dia)) deHoy.add(e);
@@ -231,7 +251,35 @@ final class WidgetDatos {
                 }
                 dias.put(new JSONObject().put("k", dia).put("i", i).put("planes", planes));
             }
-            p.edit().putString("dias", dias.toString()).putString("hoy", hoy).putLong("cuando", System.currentTimeMillis()).putString("estado", "ok").apply();
+            // (1.3: para el calendario, los primeros 3 planes de cada día, por hora, con su color y su nombre,
+            // del mes pasado a 11 meses después; el widget enseña puntitos o hasta 2 nombres)
+            JSONObject meses = new JSONObject();
+            int a0 = Integer.parseInt(hoy.substring(0, 4)), m0 = Integer.parseInt(hoy.substring(5, 7)) - 1;
+            for (int off = -1; off <= 11; off++) {
+                int t = a0 * 12 + m0 + off;
+                String km = clavesMes(t / 12, t % 12);
+                JSONObject mes = new JSONObject();
+                for (int d = 1; d <= diasDelMes(t / 12, t % 12); d++) {
+                    String kd = km + String.format(java.util.Locale.ROOT, "-%02d", d);
+                    List<JSONObject> delDia = new ArrayList<>();
+                    for (JSONObject e : eventos) if (tocaEl(e, kd)) delDia.add(e);
+                    if (delDia.isEmpty()) continue;
+                    Collections.sort(delDia, new Comparator<JSONObject>() {
+                        @Override public int compare(JSONObject a, JSONObject b) { return a.optString("hora", "").compareTo(b.optString("hora", "")); }
+                    });
+                    JSONArray planesDia = new JSONArray();
+                    for (int j = 0; j < delDia.size() && j < 3; j++) {
+                        JSONObject e = delDia.get(j);
+                        String emoji = e.optString("_emoji", "");
+                        planesDia.put(new JSONObject()
+                                .put("c", colorDe(e.optString("color", "tomate")))
+                                .put("t", (emoji.isEmpty() ? "" : emoji + " ") + e.optString("titulo", "plan")));
+                    }
+                    mes.put(String.valueOf(d), new JSONObject().put("n", delDia.size()).put("p", planesDia));
+                }
+                meses.put(km, mes);
+            }
+            p.edit().putString("dias", dias.toString()).putString("meses", meses.toString()).putString("hoy", hoy).putLong("cuando", System.currentTimeMillis()).putString("estado", "ok").apply();
         } catch (GeneralSecurityException e) {
             p.edit().putString("estado", "llave").apply();
         } catch (Exception e) {

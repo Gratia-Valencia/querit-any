@@ -3,7 +3,7 @@ package com.gratiavalencia.queritany;
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
-import android.content.ComponentName;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -19,31 +19,33 @@ import org.json.JSONObject;
  * Piloto 126.25 · 📱 El widget de Querit any en la pantalla de inicio: los planes de los próximos días
  * (los tuyos y los de tus calendarios compartidos). Se pone al día cada 30 minutos, al tocar ↻ y al conectarlo.
  * Al tocarlo se abre Querit any. Ver WidgetDatos.
+ * (1.3: hay también la lista grande, QueritWidgetGrande, y el calendario del mes, QueritWidgetMes. Al ponerse
+ * al día, se pintan los tres.)
  */
 public class QueritWidget extends AppWidgetProvider {
     static final String REFRESCAR = "com.gratiavalencia.queritany.WIDGET_REFRESCAR";
-    private static final int MAX_FILAS = 7;
+    static final int MAX_FILAS = 7;
 
     @Override
     public void onUpdate(Context c, AppWidgetManager m, int[] ids) {
-        pintar(c, m, ids);
-        refrescar(c);
+        pintar(c, m, ids, MAX_FILAS);
+        refrescar(this, c);
     }
 
     @Override
     public void onReceive(Context c, Intent i) {
         super.onReceive(c, i);
-        if (REFRESCAR.equals(i.getAction())) refrescar(c);
+        if (REFRESCAR.equals(i.getAction())) refrescar(this, c);
     }
 
     /** Pide los datos en segundo plano y vuelve a pintar todos los widgets. */
-    private void refrescar(final Context c) {
-        final PendingResult pr = goAsync();
+    static void refrescar(BroadcastReceiver r, final Context c) {
+        final BroadcastReceiver.PendingResult pr = r.goAsync();
         new Thread(new Runnable() {
             @Override public void run() {
                 try {
                     WidgetDatos.actualizar(c);
-                    pintarTodos(c);
+                    WidgetDatos.pintarTodos(c);
                 } finally {
                     pr.finish();
                 }
@@ -51,16 +53,28 @@ public class QueritWidget extends AppWidgetProvider {
         }).start();
     }
 
-    static void pintarTodos(Context c) {
-        AppWidgetManager m = AppWidgetManager.getInstance(c);
-        pintar(c, m, m.getAppWidgetIds(new ComponentName(c, QueritWidget.class)));
-    }
-
-    private static int flags() {
+    static int flags() {
         return Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE : PendingIntent.FLAG_UPDATE_CURRENT;
     }
 
-    static void pintar(Context c, AppWidgetManager m, int[] ids) {
+    /** El aviso que sale en lugar de los planes (sin conectar, desconectado…), o null si todo va bien. */
+    static String aviso(SharedPreferences p) {
+        String estado = p.getString("estado", null);
+        if (p.getString("acceso", null) == null) return "Para verlo, abre Querit any → 💾 guardar → 📱 conectar el widget ✦";
+        if ("desconectado".equals(estado)) return "Este widget se ha desconectado. Vuelve a conectarlo en Querit any → 💾 guardar.";
+        if ("llave".equals(estado)) return "Tu llave ha cambiado. Vuelve a conectar el widget en Querit any → 💾 guardar.";
+        if ("sinred".equals(estado) || "conectando".equals(estado)) return "Buscando tus planes… ✦";
+        return null;
+    }
+
+    /** Tocar el widget abre Querit any; tocar ↻ lo pone al día. */
+    static void botones(Context c, RemoteViews v) {
+        v.setOnClickPendingIntent(R.id.raiz, PendingIntent.getActivity(c, 0, new Intent(c, LauncherActivity.class), flags()));
+        v.setOnClickPendingIntent(R.id.refrescar, PendingIntent.getBroadcast(c, 1, new Intent(c, QueritWidget.class).setAction(REFRESCAR), flags()));
+    }
+
+    /** La lista de planes (la normal con 7 filas, la grande con más). */
+    static void pintar(Context c, AppWidgetManager m, int[] ids, int maxFilas) {
         if (ids == null || ids.length == 0) return;
         SharedPreferences p = WidgetDatos.prefs(c);
         String pkg = c.getPackageName();
@@ -69,18 +83,12 @@ public class QueritWidget extends AppWidgetProvider {
         v.setTextViewText(R.id.fecha, WidgetDatos.fechaLarga(hoy));
         v.removeAllViews(R.id.lista);
 
-        String estado = p.getString("estado", null);
-        String aviso = null;
-        if (p.getString("acceso", null) == null) aviso = "Para verlo, abre Querit any → 💾 guardar → 📱 conectar el widget ✦";
-        else if ("desconectado".equals(estado)) aviso = "Este widget se ha desconectado. Vuelve a conectarlo en Querit any → 💾 guardar.";
-        else if ("llave".equals(estado)) aviso = "Tu llave ha cambiado. Vuelve a conectar el widget en Querit any → 💾 guardar.";
-        else if ("sinred".equals(estado) || "conectando".equals(estado)) aviso = "Buscando tus planes… ✦";
-
+        String aviso = aviso(p);
         int filas = 0;
         if (aviso == null) {
             try {
                 JSONArray dias = new JSONArray(p.getString("dias", "[]"));
-                for (int i = 0; i < dias.length() && filas < MAX_FILAS; i++) {
+                for (int i = 0; i < dias.length() && filas < maxFilas; i++) {
                     JSONObject d = dias.getJSONObject(i);
                     String k = d.getString("k");
                     if (k.compareTo(hoy) < 0) continue; // (lo guardado de ayer, si aún no ha llegado lo nuevo)
@@ -90,7 +98,7 @@ public class QueritWidget extends AppWidgetProvider {
                     cab.setTextViewText(R.id.texto, nombre);
                     v.addView(R.id.lista, cab);
                     JSONArray planes = d.getJSONArray("planes");
-                    for (int j = 0; j < planes.length() && filas < MAX_FILAS; j++) {
+                    for (int j = 0; j < planes.length() && filas < maxFilas; j++) {
                         JSONObject pl = planes.getJSONObject(j);
                         RemoteViews f = new RemoteViews(pkg, R.layout.widget_plan);
                         f.setInt(R.id.barra, "setBackgroundColor", Color.parseColor(pl.optString("c", "#e2622c")));
@@ -107,9 +115,7 @@ public class QueritWidget extends AppWidgetProvider {
         }
         v.setViewVisibility(R.id.vacio, aviso != null ? View.VISIBLE : View.GONE);
         if (aviso != null) v.setTextViewText(R.id.vacio, aviso);
-
-        v.setOnClickPendingIntent(R.id.raiz, PendingIntent.getActivity(c, 0, new Intent(c, LauncherActivity.class), flags()));
-        v.setOnClickPendingIntent(R.id.refrescar, PendingIntent.getBroadcast(c, 1, new Intent(c, QueritWidget.class).setAction(REFRESCAR), flags()));
+        botones(c, v);
         m.updateAppWidget(ids, v);
     }
 }
