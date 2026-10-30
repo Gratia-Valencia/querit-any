@@ -2,9 +2,9 @@
 <!-- Piloto 126.25 · APK 1.3 · Un día del calendario del mes en modo «Aa»: el número y hasta 2 planes con su nombre -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="0dp"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:layout_weight="1"
-    android:gravity="center_horizontal"
+    android:gravity="center_horizontal|top"
     android:orientation="vertical"
     android:paddingLeft="1dp"
     android:paddingRight="1dp"

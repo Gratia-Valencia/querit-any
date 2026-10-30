@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Piloto 126.25 · APK 1.3 · 📅 El calendario del mes (ver QueritWidgetMes.java) -->
+<!-- Piloto 126.25 · APK 1.3 · 📅 El calendario del mes (ver QueritWidgetMes.java)
+     APK 1.4 · la rejilla ocupa todo el alto que queda y cada semana se reparte lo mismo (antes sobraba hueco abajo) -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/raiz"
     android:layout_width="match_parent"
@@ -86,7 +87,8 @@
     <LinearLayout
         android:id="@+id/rejilla"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:orientation="vertical" />
 
     <TextView
