@@ -22,6 +22,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.gratiavalencia.queritany">
 
+    <!-- Piloto 126.25 · 📱 El widget pide a Gratia los bloques cifrados -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     
 
     
@@ -142,6 +145,29 @@
             
         </activity>
 
+        <!-- Piloto 126.25 · 📱 Widget de Querit any (próximos planes) y la pantallita que lo conecta desde la web -->
+        <receiver android:name=".QueritWidget"
+            android:label="@string/widget_nombre"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider"
+                android:resource="@xml/widget_querit_info" />
+        </receiver>
+
+        <activity android:name=".WidgetConectar"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="queritany" android:host="widget" />
+            </intent-filter>
+        </activity>
         <activity android:name="com.google.androidbrowserhelper.trusted.FocusActivity" />
 
         <activity android:name="com.google.androidbrowserhelper.trusted.WebViewFallbackActivity"

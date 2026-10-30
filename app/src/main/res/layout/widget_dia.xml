@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Piloto 126.25 · El nombre del día en el widget («hoy», «mañana», «lunes 2») -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/texto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="6dp"
+    android:textColor="#e2622c"
+    android:textSize="12sp"
+    android:textStyle="bold" />

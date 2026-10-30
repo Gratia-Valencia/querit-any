@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Piloto 126.25 · 📱 Textos del widget -->
+<resources>
+    <string name="widget_nombre">Querit any · próximos planes</string>
+    <string name="widget_descripcion">Tus planes de los próximos días (y los de tus calendarios compartidos), cifrados hasta llegar a tu móvil.</string>
+</resources>

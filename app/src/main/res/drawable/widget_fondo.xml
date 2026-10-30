@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Piloto 126.25 · Papel crema con borde de tinta, como las ventanitas de Querit any -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#fdf6ea" />
+    <corners android:radius="22dp" />
+    <stroke android:width="2dp" android:color="#2b211b" />
+</shape>
